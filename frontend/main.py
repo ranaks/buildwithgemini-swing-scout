@@ -24,13 +24,25 @@ Run:
   python main.py                 # -> http://localhost:8080
 """
 
+import json
 import os
 import sys
 import uuid
 
-_venv_py = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".venv", "bin", "python")
+_dir = os.path.dirname(os.path.abspath(__file__))
+_venv_py = os.path.join(_dir, ".venv", "bin", "python")
 if os.path.exists(_venv_py) and sys.executable != _venv_py:
     os.execv(_venv_py, [_venv_py] + sys.argv)
+
+try:
+    from dotenv import load_dotenv
+
+    for p in [_dir, os.path.join(_dir, ".."), os.path.join(_dir, "..", "swing-scout")]:
+        env_file = os.path.join(p, ".env")
+        if os.path.exists(env_file):
+            load_dotenv(env_file)
+except ImportError:
+    pass
 
 
 import google.auth
@@ -51,11 +63,37 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-RESOURCE = os.environ["AGENT_ENGINE_RESOURCE_NAME"]
+RESOURCE = os.environ.get("AGENT_ENGINE_RESOURCE_NAME")
+if not RESOURCE:
+    # Auto-load from deployment_metadata.json
+    for p in [
+        os.path.join(_dir, "deployment_metadata.json"),
+        os.path.join(_dir, "..", "deployment_metadata.json"),
+        os.path.join(_dir, "..", "swing-scout", "deployment_metadata.json"),
+        "/config/Desktop/BuildWithGemini/swing-scout/deployment_metadata.json",
+    ]:
+        if os.path.exists(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    meta = json.load(f)
+                    RESOURCE = meta.get("remote_agent_runtime_id")
+                    if "agent_directory" in meta and not os.environ.get("AGENT_DIRECTORY"):
+                        os.environ["AGENT_DIRECTORY"] = meta["agent_directory"]
+                    if RESOURCE:
+                        break
+            except Exception:
+                pass
+
+if not RESOURCE:
+    raise RuntimeError(
+        "AGENT_ENGINE_RESOURCE_NAME is not set in environment and could not be loaded from deployment_metadata.json."
+    )
+
 # The agent's app directory (matches agent_directory in agents-cli-manifest.yaml).
 AGENT_DIRECTORY = os.environ.get("AGENT_DIRECTORY", "app")
 # Location is embedded in the resource name: projects/<p>/locations/<loc>/reasoningEngines/<id>.
 LOCATION = RESOURCE.split("/locations/")[1].split("/")[0]
+
 
 # A2A endpoint for an Agent Runtime deployment, via the Agent Engine HTTP
 # passthrough. The card lives at the well-known path under this base.
@@ -197,10 +235,12 @@ async def chat(req: Request):
 
 
 # Serve the chat UI (keep this mount last so /chat wins).
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+_static_dir = os.path.join(_dir, "static")
+app.mount("/", StaticFiles(directory=_static_dir, html=True), name="static")
 
 
 if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+
