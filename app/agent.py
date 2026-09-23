@@ -77,6 +77,7 @@ from app.tools.firestore_db import (
     save_stock_setup,
 )
 from app.tools.image_generator import generate_chart_image
+from app.tools.video_generator import generate_setup_video
 from google.adk.code_executors.agent_engine_sandbox_code_executor import (
     AgentEngineSandboxCodeExecutor,
 )
@@ -102,6 +103,9 @@ You have access to a Google Cloud Firestore backend (`swing_setups` collection) 
 
 ## Chart & Technical Setup Image Generation:
 - `generate_chart_image(ticker, prompt)`: Generate a visual candlestick pattern diagram, trade setup infographic, or technical chart for any stock ticker using Gemini 3.1 Flash-Lite Image. The generated visual is automatically saved as a session artifact and uploaded to public Cloud Storage. Whenever a trader asks to see a chart, visualize a setup, or view candlestick patterns, call this tool and embed or share the public HTTPS URL in your response.
+
+## Swing Setup Video Generation:
+- `generate_setup_video(ticker, prompt)`: Generate a short visual trading video demonstrating a swing trade momentum setup, candlestick pattern, or breakout chart animation for any stock ticker using Google's Omni model (gemini-omni-flash-preview) in the global region. The generated video is automatically saved as a session artifact for the Playground's Artifacts panel and uploaded to public Cloud Storage. Whenever a trader asks to see a video of a setup, animate a breakout, or generate a setup clip, call this tool and provide the public HTTPS URL.
 
 ## Python Code Execution Sandbox:
 You have access to a secure, isolated Python execution sandbox (`AgentEngineSandboxCodeExecutor`) running on Google Cloud Agent Platform.
@@ -162,6 +166,7 @@ root_agent = Agent(
         save_stock_setup,
         calculate_position_size,
         generate_chart_image,
+        generate_setup_video,
         get_weather,
         get_current_time,
     ],
