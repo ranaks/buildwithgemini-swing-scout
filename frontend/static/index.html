@@ -19,9 +19,27 @@
   .msg.user .bubble { background:var(--accent); color:#fff; border:none; }
   /* When the reply is an A2UI card, drop the bubble chrome so the card stands alone. */
   .bubble.rich { background:transparent; border:none; padding:0; max-width:100%; white-space:normal; }
-  form { display:flex; gap:.5rem; padding:1rem; border-top:1px solid var(--border); background:#fff; }
+  .bottom-bar { border-top:1px solid var(--border); background:#fff; display:flex; flex-direction:column; }
+  .examples { display:flex; gap:.5rem; padding:.6rem 1.2rem 0; max-width:780px; width:100%; margin:0 auto; overflow-x:auto; }
+  .example-btn {
+    background:#fff;
+    border:1px solid var(--border);
+    color:#374151;
+    border-radius:16px;
+    padding:.35rem .75rem;
+    font-size:.85rem;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:all .15s ease;
+  }
+  .example-btn:hover {
+    border-color:var(--accent);
+    color:var(--accent);
+    background:#ecfdf5;
+  }
+  form { display:flex; gap:.5rem; padding:.6rem 1.2rem .9rem; max-width:780px; width:100%; margin:0 auto; }
   input { flex:1; padding:.7rem; border:1px solid var(--border); border-radius:8px; font-size:1rem; }
-  button { padding:.7rem 1.1rem; border:none; border-radius:8px; background:var(--accent); color:#fff; font-weight:600; cursor:pointer; }
+  #form button { padding:.7rem 1.1rem; border:none; border-radius:8px; background:var(--accent); color:#fff; font-weight:600; cursor:pointer; }
 
   /* --- A2UI component styles (Card, Column, Row, Text, Divider, List, Image, Icon) --- */
   .a2card { border:1px solid var(--border); border-radius:12px; padding:1rem; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.06); max-width:100%; }
@@ -43,10 +61,17 @@
 <body>
 <header>SwingScout</header>
 <div id="log"></div>
-<form id="form">
-  <input id="input" placeholder="Ask SwingScout about a ticker or setup…" autocomplete="off" autofocus>
-  <button>Send</button>
-</form>
+<div class="bottom-bar">
+  <div class="examples">
+    <button type="button" class="example-btn" data-prompt="Compare NVDA and AMD momentum setups">📊 Compare NVDA &amp; AMD</button>
+    <button type="button" class="example-btn" data-prompt="Analyze TSLA swing setup and key technical levels">🔍 Analyze TSLA Setup</button>
+    <button type="button" class="example-btn" data-prompt="Calculate position size for AAPL with a $10,000 account and 2% risk">⚖️ Calculate AAPL Position Size</button>
+  </div>
+  <form id="form">
+    <input id="input" placeholder="Ask SwingScout about a ticker or setup…" autocomplete="off" autofocus>
+    <button>Send</button>
+  </form>
+</div>
 
 <script>
 const log = document.getElementById("log");
@@ -202,6 +227,18 @@ form.addEventListener("submit", async (ev) => {
   } catch (e) {
     b.textContent = "Error: " + e.message;
   }
+});
+
+// Clickable example prompts
+document.querySelectorAll(".example-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    input.value = btn.dataset.prompt || btn.textContent.trim();
+    if (typeof form.requestSubmit === "function") {
+      form.requestSubmit();
+    } else {
+      form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+    }
+  });
 });
 </script>
 </body>
